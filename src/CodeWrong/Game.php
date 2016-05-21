@@ -4,12 +4,15 @@ namespace CodeWrong;
 
 class Game
 {
+    const MAX_ROLLS = 2;
+    const MAX_PINS = 10;
+
     private $frames = [];
     private $fillBalls = [];
 
     public function roll($pins)
     {
-		$currentFrame = $this->getCurrentFrame();
+        $currentFrame = $this->getCurrentFrame();
         if ($currentFrame != null) {
             $currentFrame->roll($pins);
         } else {
@@ -19,26 +22,26 @@ class Game
 
     private function getCurrentFrame()
     {
-    	if (sizeof($this->frames) == 0) {
-    		return $this->addFrame();
-    	}
+        if (sizeof($this->frames) == 0) {
+            return $this->addFrame();
+        }
 
-    	$currentFrame = end($this->frames);
+        $currentFrame = end($this->frames);
 
-    	if ($currentFrame->allowsRoll()) {
-    		return $currentFrame;
-    	}
+        if ($currentFrame->allowsRoll()) {
+            return $currentFrame;
+        }
 
-        if (sizeof($this->frames) == 10 and !$this->fillBallAllowed()) {
+        if (sizeof($this->frames) == self::MAX_PINS and !$this->fillBallAllowed()) {
             throw new \Exception("No more shots allowed in the game.");
         }
 
-    	return $this->addFrame();
+        return $this->addFrame();
     }
 
     private function addFrame()
     {
-        if (sizeof($this->frames) == 10) {
+        if (sizeof($this->frames) == self::MAX_PINS) {
             return null;
         }
 
@@ -69,7 +72,7 @@ class Game
 
     private function fillBallRoll($pins)
     {
-        if (sizeof($this->frames) < 10) {
+        if (sizeof($this->frames) < self::MAX_PINS) {
             throw new \Exception("Something went terribly wrong.");
         }
 
@@ -97,7 +100,7 @@ class Game
 
     private function getNextBallScore($key)
     {
-		if (array_key_exists($key+1, $this->frames)) {
+        if (array_key_exists($key + 1, $this->frames)) {
             return $this->frames[$key+1]->firstRoll();
         }
 
@@ -108,7 +111,7 @@ class Game
 
     private function getNextTwoBallsScore($key)
     {
-		if (array_key_exists($key+1, $this->frames) and $this->frames[$key+1]->state() != Frame::STRIKE) {
+        if (array_key_exists($key + 1, $this->frames) and $this->frames[$key + 1]->state() != Frame::STRIKE) {
             return $this->frames[$key+1]->firstRoll() + $this->frames[$key+1]->secondRoll();
         }
 
