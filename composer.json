@@ -1,0 +1,16 @@
+{
+    "name": "codewrong/bowling",
+    "description": "Bowling kata from a bdd perspective",
+    "authors": [
+        {
+            "name": "Manuel Gómez",
+            "email": "mgdepoo@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+    	"psr-4": {
+    		"CodeWrong\\": "src/CodeWrong/"
+    	}
+    }
+}
