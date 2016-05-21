@@ -4,8 +4,8 @@ namespace CodeWrong;
 
 class Game
 {
-	protected $frames = [];
-    protected $fillBalls = [];
+    private $frames = [];
+    private $fillBalls = [];
 
     public function roll($pins)
     {
@@ -17,26 +17,7 @@ class Game
         }
     }
 
-    public function score()
-    {
-    	$score = 0;
-		foreach ($this->frames as $key => $frame) {
-			$score += $frame->score();
-
-			switch($frame->state()) {
-				case Frame::SPARE:
-					$score += $this->getNextBallScore($key);
-					break;
-				case Frame::STRIKE:
-					$score += $this->getNextTwoBallsScore($key);
-					break;
-			}
-		}
-
-		return $score;
-    }
-
-    protected function getCurrentFrame()
+    private function getCurrentFrame()
     {
     	if (sizeof($this->frames) == 0) {
     		return $this->addFrame();
@@ -55,7 +36,19 @@ class Game
     	return $this->addFrame();
     }
 
-    protected function fillBallAllowed()
+    private function addFrame()
+    {
+        if (sizeof($this->frames) == 10) {
+            return null;
+        }
+
+        $frame = new Frame();
+        $this->frames[] = $frame;
+
+        return $frame;
+    }
+
+    private function fillBallAllowed()
     {
         $lastFrame = end($this->frames);
 
@@ -74,7 +67,36 @@ class Game
         return true;
     }
 
-    protected function getNextBallScore($key) {
+    private function fillBallRoll($pins)
+    {
+        if (sizeof($this->frames) < 10) {
+            throw new \Exception("Something went terribly wrong.");
+        }
+
+        $this->fillBalls[] = new Roll($pins);
+    }
+
+    public function score()
+    {
+        $score = 0;
+        foreach ($this->frames as $key => $frame) {
+            $score += $frame->score();
+
+            switch ($frame->state()) {
+                case Frame::SPARE:
+                    $score += $this->getNextBallScore($key);
+                    break;
+                case Frame::STRIKE:
+                    $score += $this->getNextTwoBallsScore($key);
+                    break;
+            }
+        }
+
+        return $score;
+    }
+
+    private function getNextBallScore($key)
+    {
 		if (array_key_exists($key+1, $this->frames)) {
             return $this->frames[$key+1]->firstRoll();
         }
@@ -84,7 +106,8 @@ class Game
         }
     }
 
-    protected function getNextTwoBallsScore($key) {
+    private function getNextTwoBallsScore($key)
+    {
 		if (array_key_exists($key+1, $this->frames) and $this->frames[$key+1]->state() != Frame::STRIKE) {
             return $this->frames[$key+1]->firstRoll() + $this->frames[$key+1]->secondRoll();
         }
@@ -95,25 +118,5 @@ class Game
         }
 
         return $score;
-    }
-
-    protected function addFrame() {
-        if (sizeof($this->frames) == 10) {
-            return null;
-        }
-
-    	$frame = new Frame();
-    	$this->frames[] = $frame;
-
-		return $frame;
-    }
-
-    protected function fillBallRoll($pins)
-    {
-        if (sizeof($this->frames) < 10) {
-            throw new \Exception("Something went terribly wrong.");
-        }
-
-        $this->fillBalls[] = new Roll($pins);
     }
 }
