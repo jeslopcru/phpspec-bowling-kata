@@ -4,79 +4,147 @@ namespace CodeWrong;
 
 class Frame
 {
-	const ROLL_MISSING 	= 'roll_missing';
-	const OPEN 			= 'open';
-	const SPARE 		= 'spare';
-	const STRIKE 		= 'strike';
+    const ROLL_MISSING = 'roll_missing';
+    const OPEN = 'open';
+    const SPARE = 'spare';
+    const STRIKE = 'strike';
+    const FIRST = 1;
+    const SECOND = 2;
 
-	protected $rolls = [];
+    protected $rolls = [];
 
     public function roll($pins)
     {
-    	if ($this->score() == 10 or sizeof($this->rolls) == 2) {
-    		throw new \Exception("No rolls allowed.");
-    	}
-
-    	if ($this->score() + $pins > 10) {
-    		throw new \Exception("Too many pins.");
-    	}
+        $this->checkNextRollAllowed();
+        $this->checkToManyPins($pins);
 
         $this->rolls[] = new Roll($pins);
+    }
+
+    private function checkNextRollAllowed()
+    {
+        if ($this->isMaxPins() or $this->isLastRolls()) {
+            throw new \Exception("No rolls allowed.");
+        }
+    }
+
+    private function isMaxPins()
+    {
+        return $this->score() == Game::MAX_PINS;
     }
 
     public function score()
     {
         $score = 0;
-        foreach($this->rolls as $roll) {
+        foreach ($this->rolls as $roll) {
             $score += $roll->score();
         }
 
         return $score;
     }
 
+    private function isLastRolls()
+    {
+        return sizeof($this->rolls) == Game::MAX_ROLLS;
+    }
+
+    private function checkToManyPins($pins)
+    {
+        if ($this->score() + $pins > Game::MAX_PINS) {
+            throw new \Exception("Too many pins.");
+        }
+    }
+
     public function state()
     {
-        if (sizeof($this->rolls) == 1 and $this->score() < 10) {
-        	return self::ROLL_MISSING;
+        if ($this->isRollMissing()) {
+            return self::ROLL_MISSING;
         }
 
-        if (sizeof($this->rolls) == 1 and $this->score() == 10) {
-        	return self::STRIKE;
+        if ($this->isStrike()) {
+            return self::STRIKE;
         }
 
-        if (sizeof($this->rolls) == 2 and $this->score() == 10) {
-        	return self::SPARE;
+        if ($this->isSpare()) {
+            return self::SPARE;
         }
 
-        if (sizeof($this->rolls) == 2 and $this->score() < 10) {
-        	return self::OPEN;
+        if ($this->isOpen()) {
+            return self::OPEN;
         }
+        return null;
+    }
+
+    private function isRollMissing()
+    {
+        return $this->isFirst() and $this->thereArePins();
+    }
+
+    private function isFirst()
+    {
+        return sizeof($this->rolls) == self::FIRST;
+    }
+
+    private function thereArePins()
+    {
+        return $this->score() < Game::MAX_PINS;
+    }
+
+    private function isStrike()
+    {
+        return $this->isFirst() and $this->isMaxPins();
+    }
+
+    private function isSpare()
+    {
+        return $this->isLastRolls() and $this->isMaxPins();
+    }
+
+    private function isOpen()
+    {
+        return $this->isLastRolls() and $this->thereArePins();
     }
 
     public function allowsRoll()
     {
-        if ($this->score() == 10 or sizeof($this->rolls) == 2) {
-            return false;
+        $isAllowRoll = true;
+        if ($this->isMaxPins() or $this->isLastRolls()) {
+            $isAllowRoll = false;
         }
-
-        return true;
+        return $isAllowRoll;
     }
 
     public function firstRoll()
     {
-        if (sizeof($this->rolls) == 0) {
-            throw new \Exception("Empty frame.");            
-        }
+        $this->checkEmptyFrame();
 
-        return reset($this->rolls)->score();
+        return $this->calculateScore(self::FIRST);
+    }
+
+    private function checkEmptyFrame()
+    {
+        if (sizeof($this->rolls) == 0) {
+            throw new \Exception("Empty frame.");
+        }
+    }
+
+    private function calculateScore($attempt)
+    {
+        $correctedAttempt = $attempt - 1;
+        return $this->rolls[$correctedAttempt]->score();
     }
 
     public function secondRoll()
     {
-        if (sizeof($this->rolls) < 2) {
-            throw new \Exception("No second roll was rolled.");            
-        }
+        $this->checkMaxRollsPerFrame();
 
-        return end($this->rolls)->score();
+        return $this->calculateScore(self::SECOND);
+    }
+
+    private function checkMaxRollsPerFrame()
+    {
+        if (sizeof($this->rolls) < Game::MAX_ROLLS) {
+            throw new \Exception("No second roll was rolled.");
+        }
     }
 }
